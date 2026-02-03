@@ -32,12 +32,12 @@ export default function ChipScroll() {
     // 0.5-0.8 (Stage 3 - Reading): FREEZE at Frame 120 (Best Angle for "Relief")
     // 0.8-1.0 (CTA): Frames 120 -> 192 (Finish)
     // Strict Snap-Scroll Logic: 3 Distinct "Slides" (Synced with Product Gallery)
-    // 0-0.3: Hero (Frame 0)
+    // 0-0.3: Hero (Frame 1)
     // 0.3-0.6: Features (Frame 60)
     // 0.6-1.0: Benefits (Frame 150)
     const targetFrame = useTransform(scrollYProgress,
         [0, 0.3, 0.31, 0.6, 0.61, 1],
-        [0, 0, 60, 60, 150, 150]
+        [1, 1, 60, 60, 150, 150]
     );
 
     const frameIndex = useSpring(targetFrame, { stiffness: 200, damping: 20 }); // Smooth the jump slightly
