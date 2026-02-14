@@ -63,7 +63,7 @@ export default function ChipScroll() {
                 return new Promise<HTMLImageElement>((resolve) => {
                     const img = new Image();
                     const frameNum = String(i + 1).padStart(3, "0");
-                    img.src = `/sequence/frame_${frameNum}.png`;
+                    img.src = `/Sequence/frame_${frameNum}.png`;
                     img.onload = () => {
                         if (isMounted) {
                             loaded++;
@@ -100,6 +100,9 @@ export default function ChipScroll() {
             const index = Math.min(Math.round(frameIndex.get()), images.length - 1);
             const img = images[index];
             if (!img) return;
+
+            // Safety check: ensure image has valid dimensions to avoid NaN
+            if (!img.width || !img.height) return;
 
             // 2. Retina Scaling (The "Crispness" factor)
             const dpr = Math.min(window.devicePixelRatio || 1, 3); // Cap at 3x

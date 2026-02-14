@@ -10,7 +10,7 @@ const products = [
     id: "1",
     name: "FlexCore Arc",
     price: 89.99,
-    image: "/sequence/frame_100.png",
+    image: "/Sequence/frame_100.png",
     description: "The ultimate back relief solution.",
   },
 ];
