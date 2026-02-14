@@ -63,7 +63,7 @@ export default function ChipScroll() {
                 return new Promise<HTMLImageElement>((resolve) => {
                     const img = new Image();
                     const frameNum = String(i + 1).padStart(3, "0");
-                    img.src = `/Sequence/frame_${frameNum}.png`;
+                    img.src = `/sequence/frame_${frameNum}.png`;
                     img.onload = () => {
                         if (isMounted) {
                             loaded++;
