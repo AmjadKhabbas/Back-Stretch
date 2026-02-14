@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { ArrowRight, CheckCircle2, ChevronDown } from "lucide-react";
 
-const TOTAL_FRAMES = 192;
+const TOTAL_FRAMES = 240;
 
 export default function ChipScroll() {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -26,18 +26,10 @@ export default function ChipScroll() {
         restDelta: 0.001
     });
 
-    // Snap-Scroll Logic: "Pause" animation when reading text
-    // 0-0.2 (Hero): Frames 0 -> 45
-    // 0.2-0.5 (Stage 2 - Reading): FREEZE at Frame 60 (Best Angle for "Layers")
-    // 0.5-0.8 (Stage 3 - Reading): FREEZE at Frame 120 (Best Angle for "Relief")
-    // 0.8-1.0 (CTA): Frames 120 -> 192 (Finish)
-    // Strict Snap-Scroll Logic: 3 Distinct "Slides" (Synced with Product Gallery)
-    // 0-0.3: Hero (Frame 1)
-    // 0.3-0.6: Features (Frame 60)
-    // 0.6-1.0: Benefits (Frame 150)
+    // Smooth Scrubbing Logic: Play full animation 1 -> 240
     const targetFrame = useTransform(scrollYProgress,
-        [0, 0.3, 0.31, 0.6, 0.61, 1],
-        [1, 1, 60, 60, 150, 150]
+        [0, 1],
+        [1, 240]
     );
 
     const frameIndex = useSpring(targetFrame, { stiffness: 200, damping: 20 }); // Smooth the jump slightly
