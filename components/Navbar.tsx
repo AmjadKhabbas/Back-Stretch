@@ -27,7 +27,7 @@ export function Navbar() {
         <nav
             className={cn(
                 "fixed top-0 w-full z-50 transition-all duration-300 border-b border-transparent",
-                scrolled ? "bg-white/80 backdrop-blur-md py-4 border-gray-200 shadow-sm" : "bg-transparent py-6"
+                scrolled ? "bg-white/90 backdrop-blur-md py-4 border-gray-200 shadow-sm" : "bg-transparent py-6"
             )}
         >
             <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">

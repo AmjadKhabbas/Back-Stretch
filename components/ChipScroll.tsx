@@ -185,18 +185,22 @@ export default function ChipScroll() {
                 <canvas ref={canvasRef} className="absolute inset-0 w-full h-full object-cover" />
 
                 {/* --- STAGE 1: HERO (Centered) --- */}
-                <motion.div style={{ opacity: opacityHero }} className="absolute inset-x-0 bottom-[15%] text-center pointer-events-none z-10">
-                    <h1 className="text-[12vw] leading-[0.9] font-light tracking-tighter text-gray-900 mb-6 mix-blend-multiply">
+                {/* Top Title */}
+                <motion.div style={{ opacity: opacityHero }} className="absolute inset-x-0 top-[12%] text-center pointer-events-none z-10">
+                    <h1 className="text-[12vw] leading-[0.9] font-light tracking-tighter text-gray-900 mix-blend-multiply">
                         FlexCore Arc
                     </h1>
-                    <p className="text-xl md:text-2xl text-gray-500 font-light tracking-tight max-w-lg mx-auto">
+                </motion.div>
+
+                {/* Bottom Subtitle & CTA */}
+                <motion.div style={{ opacity: opacityHero }} className="absolute inset-x-0 bottom-[10%] text-center pointer-events-none z-10">
+                    <p className="text-xl md:text-2xl text-gray-500 font-light tracking-tight max-w-lg mx-auto mb-8">
                         Engineered for Ergonomic Excellence
                     </p>
                     <motion.div
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 1, duration: 1 }}
-                        className="mt-12"
                     >
                         <div className="flex flex-col items-center gap-2 text-gray-400 text-xs tracking-widest uppercase">
                             <span>Scroll to Configure</span>

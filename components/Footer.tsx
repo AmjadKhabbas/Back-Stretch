@@ -12,7 +12,7 @@ export function Footer() {
                 <div className="flex gap-8 text-sm text-gray-600">
                     <Link href="#" className="hover:text-gray-900 transition-colors">Privacy</Link>
                     <Link href="#" className="hover:text-gray-900 transition-colors">Terms</Link>
-                    <Link href="#" className="hover:text-gray-900 transition-colors">Support</Link>
+                    <Link href="/contact" className="hover:text-gray-900 transition-colors">Support</Link>
                 </div>
 
                 <p className="text-gray-400 text-xs">© 2026 FlexCore Inc.</p>
