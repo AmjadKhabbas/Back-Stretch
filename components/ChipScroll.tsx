@@ -1,50 +1,54 @@
 "use client";
 
-import { useScroll, useTransform, motion, useSpring } from "framer-motion";
+import { useMotionValue, useTransform, motion, animate } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
-import { cn } from "@/lib/utils";
-import { ArrowRight, CheckCircle2, ChevronDown } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 
 const TOTAL_FRAMES = 240;
+const ANIMATION_DURATION = 12; // Seconds for full loop
 
 export default function ChipScroll() {
-    const containerRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [images, setImages] = useState<HTMLImageElement[]>([]);
     const [imagesLoaded, setImagesLoaded] = useState(false);
     const [loadProgress, setLoadProgress] = useState(0);
 
-    const { scrollYProgress } = useScroll({
-        target: containerRef,
-        offset: ["start start", "end end"],
-    });
+    // Time-based progress (0 to 1)
+    const progress = useMotionValue(0);
 
-    // Smooth spring physics for frame interpolation (The "Butter" factor)
-    const smoothProgress = useSpring(scrollYProgress, {
-        stiffness: 100,
-        damping: 30,
-        restDelta: 0.001
-    });
+    // Auto-Play Logic
+    useEffect(() => {
+        if (!imagesLoaded) return;
 
-    // Smooth Scrubbing Logic: Play full animation 1 -> 240
-    const targetFrame = useTransform(scrollYProgress,
-        [0, 1],
-        [1, 240]
-    );
+        const controls = animate(progress, 1, {
+            duration: ANIMATION_DURATION,
+            ease: "linear",
+            // repeat: Infinity,
+            // repeatDelay: 2,
+            onComplete: () => {
+                // Optional: Reset or loop
+            }
+        });
 
-    const frameIndex = useSpring(targetFrame, { stiffness: 200, damping: 20 }); // Smooth the jump slightly
+        return () => controls.stop();
+    }, [imagesLoaded, progress]);
 
-    // Dynamic Canvas Offset Logic (Editorial Layout) - Synced with Strict Snaps
-    const canvasOffsetX = useTransform(scrollYProgress,
+
+    // Frame Interpolation
+    const frameIndex = useTransform(progress, [0, 1], [1, 240]);
+
+    // Dynamic Canvas Offset Logic (Editorial Layout)
+    const canvasOffsetX = useTransform(progress,
         [0, 0.3, 0.31, 0.6, 0.61, 1],
         [0, 0, 25, 25, -25, -25] // Center -> Right Panel -> Left Panel
     );
 
     // Text Overlay Opacities
-    const opacityHero = useTransform(scrollYProgress, [0, 0.15], [1, 0]);
-    const opacityFeature = useTransform(scrollYProgress, [0.2, 0.3, 0.45, 0.55], [0, 1, 1, 0]);
-    const opacityBenefit = useTransform(scrollYProgress, [0.6, 0.7, 0.85, 0.95], [0, 1, 1, 0]);
-    const opacityCTA = useTransform(scrollYProgress, [0.9, 1], [0, 1]);
+    const opacityHero = useTransform(progress, [0, 0.15], [1, 0]);
+    const opacityFeature = useTransform(progress, [0.2, 0.3, 0.45, 0.55], [0, 1, 1, 0]);
+    const opacityBenefit = useTransform(progress, [0.6, 0.7, 0.85, 0.95], [0, 1, 1, 0]);
+    const opacityFinal = useTransform(progress, [0.9, 1], [0, 1]);
+    const opacityFinalCard = useTransform(progress, [0.95, 1], [0, 1]);
 
     // Preload Images
     useEffect(() => {
@@ -63,7 +67,7 @@ export default function ChipScroll() {
                         }
                         resolve(img);
                     };
-                    img.onerror = () => resolve(img); // Fail gracefully
+                    img.onerror = () => resolve(img);
                 });
             });
 
@@ -77,7 +81,7 @@ export default function ChipScroll() {
         return () => { isMounted = false; };
     }, []);
 
-    // High-Fidelity Render Loop
+    // Render Loop
     useEffect(() => {
         if (!imagesLoaded || images.length === 0) return;
 
@@ -85,57 +89,39 @@ export default function ChipScroll() {
             const canvas = canvasRef.current;
             if (!canvas) return;
 
-            const ctx = canvas.getContext("2d", { alpha: false }); // Opt: Disable alpha for perf
+            const ctx = canvas.getContext("2d", { alpha: false });
             if (!ctx) return;
 
-            // 1. Get current smooth frame
             const index = Math.min(Math.round(frameIndex.get()), images.length - 1);
             const img = images[index];
-            if (!img) return;
+            if (!img || !img.width || !img.height) return;
 
-            // Safety check: ensure image has valid dimensions to avoid NaN
-            if (!img.width || !img.height) return;
-
-            // 2. Retina Scaling (The "Crispness" factor)
-            const dpr = Math.min(window.devicePixelRatio || 1, 3); // Cap at 3x
+            const dpr = Math.min(window.devicePixelRatio || 1, 3);
             const rect = canvas.getBoundingClientRect();
 
-            // Allow canvas resolution to match display resolution
             canvas.width = rect.width * dpr;
             canvas.height = rect.height * dpr;
 
-            // Reset transform before drawing
             ctx.setTransform(1, 0, 0, 1, 0, 0);
             ctx.scale(dpr, dpr);
-
-            // 3. High Quality Settings
             ctx.imageSmoothingEnabled = true;
             ctx.imageSmoothingQuality = 'high';
             ctx.fillStyle = "#ffffff";
             ctx.fillRect(0, 0, rect.width, rect.height);
 
-            // 4. Calculate Contain Logic with "Crisp Cap"
-            // Start with a base relative scale (60% of viewport width)
-            // But CAP it at 1000px to avoid upscaling on large screens (keeping it "minimized" & sharp)
             const MAX_WIDTH = 1000;
             let targetDrawWidth = Math.min(rect.width * 0.6, MAX_WIDTH);
-
-            // Adjust for mobile (give it more width on small screens)
-            if (rect.width < 768) {
-                targetDrawWidth = rect.width * 0.85;
-            }
+            if (rect.width < 768) targetDrawWidth = rect.width * 0.85;
 
             const imgAspect = img.width / img.height;
             let drawWidth = targetDrawWidth;
             let drawHeight = drawWidth / imgAspect;
 
-            // Ensure height doesn't overflow viewport
             if (drawHeight > rect.height * 0.8) {
                 drawHeight = rect.height * 0.8;
                 drawWidth = drawHeight * imgAspect;
             }
 
-            // 5. Apply Dynamic Editorial Offset
             const currentOffsetPercent = canvasOffsetX.get();
             const pixelOffset = (rect.width * currentOffsetPercent) / 100;
 
@@ -144,36 +130,29 @@ export default function ChipScroll() {
 
             ctx.drawImage(img, x, y, drawWidth, drawHeight);
 
-            // 6. Seamless White Masking (Aggressive Crop)
-            // Explicitly draw white bars over the edges of the image to hide artifacts
-            // The source images have a thick black border, so we must crop significantly (25px)
+            // White Masking
             ctx.fillStyle = "#ffffff";
-            const maskSize = 25; // Cover 25px into the image (removes dirty edges)
-
-            // Left Mask
+            const maskSize = 25;
             ctx.fillRect(x - 1, y, maskSize + 1, drawHeight);
-            // Right Mask
             ctx.fillRect(x + drawWidth - maskSize, y, maskSize + 1, drawHeight);
-            // Top Mask
             ctx.fillRect(x, y - 1, drawWidth, maskSize + 1);
-            // Bottom Mask
             ctx.fillRect(x, y + drawHeight - maskSize, drawWidth, maskSize + 1);
         };
 
-        const unsubscribe = smoothProgress.on("change", render);
-        render(); // Initial draw
+        const unsubscribe = frameIndex.on("change", render);
+        render();
         window.addEventListener("resize", render);
         return () => {
             unsubscribe();
             window.removeEventListener("resize", render);
         };
-    }, [images, imagesLoaded, smoothProgress, canvasOffsetX]); // Re-bind when motion values update
+    }, [images, imagesLoaded, frameIndex, canvasOffsetX]);
 
     return (
-        <div ref={containerRef} className="relative h-[600vh] bg-white">
+        <div className="fixed inset-0 bg-transparent z-0">
             {/* Loading Overlay */}
             {!imagesLoaded && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-white text-gray-900">
+                <div className="absolute inset-0 z-50 flex items-center justify-center bg-[#f6f7f9] text-gray-900">
                     <div className="text-center">
                         <div className="w-16 h-16 border-4 border-gray-100 border-t-blue-600 rounded-full animate-spin mx-auto mb-4" />
                         <p className="text-sm font-medium tracking-widest uppercase text-gray-400">Loading Experience {loadProgress}%</p>
@@ -181,99 +160,109 @@ export default function ChipScroll() {
                 </div>
             )}
 
-            <div className="sticky top-0 h-screen w-full overflow-hidden">
-                <canvas ref={canvasRef} className="absolute inset-0 w-full h-full object-cover" />
+            <canvas ref={canvasRef} className="absolute inset-0 w-full h-full object-cover drop-shadow-[0_35px_35px_rgba(0,0,0,0.15)]" />
 
-                {/* --- STAGE 1: HERO (Centered) --- */}
-                {/* Top Title */}
-                <motion.div style={{ opacity: opacityHero }} className="absolute inset-x-0 top-[12%] text-center pointer-events-none z-10">
-                    <h1 className="text-[12vw] leading-[0.9] font-light tracking-tighter text-gray-900 mix-blend-multiply">
-                        FlexCore Arc
-                    </h1>
-                </motion.div>
+            {/* --- STAGE 1: HERO (Centered) --- */}
+            <motion.div style={{ opacity: opacityHero }} className="absolute inset-x-0 top-[6%] text-center pointer-events-none z-10">
+                <h1 className="text-[12vw] leading-[0.9] font-serif font-medium tracking-tighter text-gray-900 mix-blend-multiply">
+                    FlexCore Arc
+                </h1>
+            </motion.div>
 
-                {/* Bottom Subtitle & CTA */}
-                <motion.div style={{ opacity: opacityHero }} className="absolute inset-x-0 bottom-[10%] text-center pointer-events-none z-10">
-                    <p className="text-xl md:text-2xl text-gray-500 font-light tracking-tight max-w-lg mx-auto mb-8">
-                        Engineered for Ergonomic Excellence
+            <motion.div style={{ opacity: opacityHero }} className="absolute inset-x-0 bottom-[10%] text-center pointer-events-none z-10">
+                <p className="text-xl md:text-2xl text-gray-500 font-light tracking-tight max-w-lg mx-auto">
+                    Engineered for Ergonomic Excellence
+                </p>
+            </motion.div>
+
+            {/* --- STAGE 2: FEATURES (Left Panel) --- */}
+            <motion.div
+                style={{ opacity: opacityFeature, x: useTransform(opacityFeature, [0, 1], [-50, 0]) }}
+                className="absolute inset-0 flex items-center justify-start px-6 md:px-24 pointer-events-none"
+            >
+                <div className="glass-panel p-10 md:p-12 rounded-3xl max-w-md w-full pointer-events-auto backdrop-blur-xl border border-white/40 shadow-2xl">
+                    <span className="text-blue-600 font-bold tracking-widest text-xs uppercase mb-4 block">Core Technology</span>
+                    <h2 className="text-4xl font-serif text-gray-900 mb-6 tracking-tight text-balance">
+                        3-Layer Anti-Fatigue System
+                    </h2>
+                    <p className="text-lg text-gray-600 leading-relaxed font-light mb-8">
+                        Precision-molded layers work in harmony to support your spine's natural curve.
                     </p>
-                    <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 1, duration: 1 }}
-                    >
-                        <div className="flex flex-col items-center gap-2 text-gray-400 text-xs tracking-widest uppercase">
-                            <span>Scroll to Configure</span>
-                            <ChevronDown className="animate-bounce" size={16} />
+                    <ul className="space-y-3">
+                        {["Medical-grade TPE", "Memory Foam Core", "Breathable Mesh"].map((item) => (
+                            <li key={item} className="flex items-center gap-3 text-gray-700">
+                                <CheckCircle2 size={18} className="text-blue-500" />
+                                <span className="text-sm font-medium">{item}</span>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            </motion.div>
+
+            {/* --- STAGE 3: BENEFITS (Right Panel) --- */}
+            <motion.div
+                style={{ opacity: opacityBenefit, x: useTransform(opacityBenefit, [0, 1], [50, 0]) }}
+                className="absolute inset-0 flex items-center justify-end px-6 md:px-24 pointer-events-none"
+            >
+                <div className="glass-panel p-10 md:p-12 rounded-3xl max-w-md w-full pointer-events-auto backdrop-blur-xl border border-white/40 shadow-2xl">
+                    <span className="text-emerald-600 font-bold tracking-widest text-xs uppercase mb-4 block">Medical Benefits</span>
+                    <h2 className="text-4xl font-serif text-gray-900 mb-6 tracking-tight text-balance">
+                        Built for Instant Relief
+                    </h2>
+                    <p className="text-lg text-gray-600 leading-relaxed font-light mb-8">
+                        Decompress your lumbar spine in just 10 minutes a day. Designed by chiropractors.
+                    </p>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="p-4 bg-gray-50/50 rounded-2xl">
+                            <div className="text-3xl font-light text-gray-900 mb-1">10<span className="text-sm align-top">min</span></div>
+                            <div className="text-xs text-gray-500 uppercase tracking-wider">Daily Use</div>
                         </div>
-                    </motion.div>
-                </motion.div>
-
-                {/* --- STAGE 2: FEATURES (Left Panel) --- */}
-                <motion.div
-                    style={{ opacity: opacityFeature, x: useTransform(opacityFeature, [0, 1], [-50, 0]) }}
-                    className="absolute inset-0 flex items-center justify-start px-6 md:px-24 pointer-events-none"
-                >
-                    <div className="glass-panel p-10 md:p-12 rounded-3xl max-w-md w-full pointer-events-auto backdrop-blur-xl bg-white/80 border border-white/40 shadow-2xl">
-                        <span className="text-blue-600 font-bold tracking-widest text-xs uppercase mb-4 block">Core Technology</span>
-                        <h2 className="text-4xl font-light text-gray-900 mb-6 tracking-tight text-balance">
-                            3-Layer Anti-Fatigue System
-                        </h2>
-                        <p className="text-lg text-gray-600 leading-relaxed font-light mb-8">
-                            Precision-molded layers work in harmony to support your spine's natural curve. The proprietary foam composition absorbs micro-vibrations.
-                        </p>
-                        <ul className="space-y-3">
-                            {["Medical-grade TPE", "Memory Foam Core", "Breathable Mesh"].map((item) => (
-                                <li key={item} className="flex items-center gap-3 text-gray-700">
-                                    <CheckCircle2 size={18} className="text-blue-500" />
-                                    <span className="text-sm font-medium">{item}</span>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                </motion.div>
-
-                {/* --- STAGE 3: BENEFITS (Right Panel) --- */}
-                <motion.div
-                    style={{ opacity: opacityBenefit, x: useTransform(opacityBenefit, [0, 1], [50, 0]) }}
-                    className="absolute inset-0 flex items-center justify-end px-6 md:px-24 pointer-events-none"
-                >
-                    <div className="glass-panel p-10 md:p-12 rounded-3xl max-w-md w-full pointer-events-auto backdrop-blur-xl bg-white/80 border border-white/40 shadow-2xl">
-                        <span className="text-emerald-600 font-bold tracking-widest text-xs uppercase mb-4 block">Medical Benefits</span>
-                        <h2 className="text-4xl font-light text-gray-900 mb-6 tracking-tight text-balance">
-                            Built for Instant Relief
-                        </h2>
-                        <p className="text-lg text-gray-600 leading-relaxed font-light mb-8">
-                            Decompress your lumbar spine in just 10 minutes a day. Designed by chiropractors to reverse the effects of sedentary lifestyle.
-                        </p>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="p-4 bg-gray-50 rounded-2xl">
-                                <div className="text-3xl font-light text-gray-900 mb-1">10<span className="text-sm align-top">min</span></div>
-                                <div className="text-xs text-gray-500 uppercase tracking-wider">Daily Use</div>
-                            </div>
-                            <div className="p-4 bg-gray-50 rounded-2xl">
-                                <div className="text-3xl font-light text-gray-900 mb-1">110<span className="text-sm align-top">deg</span></div>
-                                <div className="text-xs text-gray-500 uppercase tracking-wider">Arc Angle</div>
-                            </div>
+                        <div className="p-4 bg-gray-50/50 rounded-2xl">
+                            <div className="text-3xl font-light text-gray-900 mb-1">110<span className="text-sm align-top">deg</span></div>
+                            <div className="text-xs text-gray-500 uppercase tracking-wider">Arc Angle</div>
                         </div>
                     </div>
-                </motion.div>
+                </div>
+            </motion.div>
 
-                {/* --- STAGE 4: CTA (Center) --- */}
-                <motion.div style={{ opacity: opacityCTA }} className="absolute inset-0 flex items-center justify-center pointer-events-none bg-white/0">
-                    <div className="text-center relative z-20 pointer-events-auto mt-[40vh]">
-                        <h2 className="text-5xl md:text-7xl font-light text-gray-900 mb-8 tracking-tighter">
-                            Experience the Elevation
-                        </h2>
-                        <button className="group relative px-12 py-6 bg-gray-900 text-white rounded-full text-xl font-medium shadow-2xl hover:scale-105 hover:bg-black transition-all duration-500 overflow-hidden">
-                            <span className="relative z-10 flex items-center gap-3">
-                                Shop Now — $89.99
-                                <ArrowRight className="group-hover:translate-x-1 transition-transform" />
-                            </span>
-                        </button>
+            {/* --- STAGE 4: Final Frame (Center left title, right demo card) --- */}
+            <motion.div style={{ opacity: opacityFinal }} className="absolute inset-x-0 bottom-[10%] text-center md:text-left md:left-[8%] pointer-events-none z-10 w-fit">
+                <h2 className="text-4xl md:text-7xl font-serif text-gray-900 tracking-tighter mb-4 text-balance">
+                    Elevate Your Spine.
+                </h2>
+                <p className="text-xl text-gray-600 font-light max-w-md mt-4">
+                    Experience the ultimate float effect, beautifully engineered to support your back day after day.
+                </p>
+            </motion.div>
+
+            <motion.div style={{ opacity: opacityFinalCard, x: useTransform(opacityFinalCard, [0, 1], [50, 0]) }} className="absolute inset-y-0 right-0 flex items-center justify-end pr-6 md:pr-24 pointer-events-none z-20">
+                <div className="glass-panel p-8 rounded-3xl w-full max-w-sm pointer-events-auto backdrop-blur-xl border border-white/40 shadow-2xl flex flex-col gap-6">
+                    <div>
+                        <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 text-[10px] font-bold tracking-widest uppercase rounded-full mb-3">Limited Edition</span>
+                        <h3 className="text-2xl font-serif text-gray-900">FlexCore Arc</h3>
+                        <div className="flex items-end gap-3 mt-2">
+                            <span className="text-3xl font-light text-gray-900">$49.99</span>
+                            <span className="text-sm text-gray-400 line-through mb-1">$79.99</span>
+                        </div>
                     </div>
-                </motion.div>
-            </div>
+
+                    <div className="space-y-3 pt-4 border-t border-gray-100/50">
+                        {["Free Worldwide Shipping", "100 Days Risk-Free Trial", "Lifetime Warranty"].map((item) => (
+                            <div key={item} className="flex items-center gap-3">
+                                <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                                    <CheckCircle2 size={12} className="text-emerald-600" />
+                                </div>
+                                <span className="text-sm text-gray-600 font-medium">{item}</span>
+                            </div>
+                        ))}
+                    </div>
+
+                    <button className="w-full py-4 mt-2 bg-gray-900 text-white rounded-xl font-medium tracking-wide hover:bg-gray-800 transition-colors shadow-xl shadow-gray-900/20">
+                        Add to Cart — $49.99
+                    </button>
+                    <p className="text-center text-xs text-gray-400 font-medium">Or pay in 4 interest-free payments.</p>
+                </div>
+            </motion.div>
         </div>
     );
 }

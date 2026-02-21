@@ -24,7 +24,7 @@ export default function ProductPage() {
         addItem({
             id: `flexcore-arc`,
             name: "FlexCore Arc Back Stretcher",
-            price: 89.99,
+            price: 49.99,
             quantity,
             image: `/sequence/frame_${String(currentFrame).padStart(3, '0')}.png`,
         });
@@ -92,9 +92,9 @@ export default function ProductPage() {
                         </p>
 
                         <div className="flex items-end gap-4 mb-8">
-                            <span className="text-4xl font-light text-gray-900">$89.99</span>
-                            <span className="text-gray-400 line-through text-xl">$129.99</span>
-                            <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">Save $40</span>
+                            <span className="text-4xl font-light text-gray-900">$49.99</span>
+                            <span className="text-gray-400 line-through text-xl">$79.99</span>
+                            <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">Save $30</span>
                         </div>
 
                         {/* Quantity */}
@@ -110,7 +110,7 @@ export default function ProductPage() {
                         {/* CTAs */}
                         <div className="flex flex-col gap-4 mb-10">
                             <Button onClick={handleAddToCart} size="lg" className="w-full py-5 text-lg shadow-xl shadow-blue-900/10">
-                                Add to Cart — ${(89.99 * quantity).toFixed(2)}
+                                Add to Cart — ${(49.99 * quantity).toFixed(2)}
                             </Button>
                             <Button onClick={handleBuyNow} variant="outline" size="lg" className="w-full py-5 text-lg border-gray-300 hover:bg-gray-50 text-gray-900">
                                 Buy Now (Express Checkout)

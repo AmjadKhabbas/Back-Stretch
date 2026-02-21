@@ -23,6 +23,7 @@ const shippingSchema = z.object({
     address: z.string().min(5, "Required"),
     city: z.string().min(2, "Required"),
     zip: z.string().min(4, "Required"),
+    emailOptIn: z.boolean().optional(),
 });
 
 type ShippingFormData = z.infer<typeof shippingSchema>;
@@ -144,6 +145,12 @@ export default function CheckoutPage() {
                                     <div className="grid grid-cols-2 gap-4 mt-4">
                                         <Input label="City" {...register("city")} error={errors.city?.message} />
                                         <Input label="ZIP Code" {...register("zip")} error={errors.zip?.message} />
+                                    </div>
+                                    <div className="mt-6 flex items-start gap-3">
+                                        <input type="checkbox" id="emailOptIn" {...register("emailOptIn")} className="mt-1 w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500" />
+                                        <label htmlFor="emailOptIn" className="text-sm text-gray-600 leading-snug">
+                                            Send me order confirmation and exclusive offers to my email
+                                        </label>
                                     </div>
                                 </div>
 

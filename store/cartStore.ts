@@ -18,6 +18,8 @@ interface CartStore {
     clearCart: () => void;
     itemCount: number;
     getCartTotal: () => number;
+    getSubtotal: () => number;
+    getDiscount: () => number;
 }
 
 export const useCartStore = create<CartStore>()(
@@ -65,7 +67,24 @@ export const useCartStore = create<CartStore>()(
 
             getCartTotal: () => {
                 const { items } = get();
+                const subtotal = items.reduce((total, item) => total + item.price * item.quantity, 0);
+                const itemCount = items.reduce((acc, i) => acc + i.quantity, 0);
+
+                // Promotion: Buy 2+ get $10 off
+                const discount = itemCount >= 2 ? 10 : 0;
+
+                return Math.max(0, subtotal - discount);
+            },
+
+            getSubtotal: () => {
+                const { items } = get();
                 return items.reduce((total, item) => total + item.price * item.quantity, 0);
+            },
+
+            getDiscount: () => {
+                const { items } = get();
+                const itemCount = items.reduce((acc, i) => acc + i.quantity, 0);
+                return itemCount >= 2 ? 10 : 0;
             }
         }),
         { name: 'flexcore-cart' }
